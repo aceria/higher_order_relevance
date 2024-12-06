@@ -1,6 +1,6 @@
 # The relevance of higher-order ties
 
-In this repository you find code to run experiments of the paper "The relevance of higher-order ties". The library [SNAP](https://github.com/snap-stanford/snap) is needed, together with `requirements.txt`. The code has been tested with Python 3.6.13.
+In this repository you find code to run experiments of the paper "The relevance of higher-order ties". 
 
 
 
