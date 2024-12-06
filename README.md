@@ -17,7 +17,7 @@ Utilities to randomize the labelled higher-order network.
 
 -`resilience_nx.py`
 Utilities to compute the (complementary) order contribution to the number of triangles, to the global largest connected component, and of the number of nodes at each label in the largest connected component of the network.
-(Uses NetworkX library)
+(Based on NetworkX library)
 
 -`resilience_checked.py`
 Utilities to compute the (complementary) order contribution to the number of triangles, to the global largest connected component, and of the number of nodes at each label in the largest connected component of the network.
@@ -25,7 +25,7 @@ Utilities to compute the (complementary) order contribution to the number of tri
 
 -`resilience_igraph.py`
 Utilities to compute the (complementary) order contribution to the global largest connected component, and of the number of nodes at each label in the largest connected component of the network.
-(Uses NetworkX library).
+(Based on iGraph library).
 
 -`joint_distribution_overlapp.py`
 Utilities to compute the group composition probability of a labelled higher-order network.
