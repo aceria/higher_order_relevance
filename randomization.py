@@ -16,8 +16,8 @@ def randomize_hyper_df(hyper_df,seed1=0,method = 3,return_bipartite = False,verb
         random.shuffle(bipartite_df['fullName'].values)
         df_list = [bipartite_df]
     elif method != 0:
-        if method == 1: rand_list = ['ISO']
-        if method == 2: rand_list = ['order']
+        if method == 1: rand_list = ['order']
+        if method == 2: rand_list = ['ISO']
         elif method == 3: rand_list = ['order','ISO']
         df_list = list()
         for iso,df_rest in bipartite_df.groupby(rand_list):
