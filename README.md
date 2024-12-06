@@ -6,9 +6,6 @@ In this repository you find code to run experiments of the paper "The relevance 
 
 ## Repository organization
 
-### Description of folders
-
-- [code/](code/): Rutines to run the core experiments.
 
 ### Description of python files
 
