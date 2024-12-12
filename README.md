@@ -13,15 +13,15 @@ In this repository you find code to run experiments of the paper "The relevance 
 Utilities to randomize the labelled higher-order network.
 
 -`resilience_nx.py`
-Utilities to compute the (complementary) order contribution to the number of triangles, to the global largest connected component, and of the number of nodes at each label in the largest connected component of the network.
+Utilities to compute the (complementary) order contribution to the number of triangles, to the global largest connected component, and to the number of nodes with each label in the largest connected component of the network.
 (Based on NetworkX library)
 
 -`resilience_checked.py`
-Utilities to compute the (complementary) order contribution to the number of triangles, to the global largest connected component, and of the number of nodes at each label in the largest connected component of the network.
+Utilities to compute the (complementary) order contribution to the number of triangles, to the global largest connected component, and to the number of nodes with each label in the largest connected component of the network.
 (Modified method to check inconsistencies, see paper in the Supplementary Material, modified approach).
 
 -`resilience_igraph.py`
-Utilities to compute the (complementary) order contribution to the global largest connected component, and of the number of nodes at each label in the largest connected component of the network.
+Utilities to compute the (complementary) order contribution to the global largest connected component, and to the number of nodes with each label in the largest connected component of the network.
 (Based on iGraph library).
 
 -`joint_distribution_overlapp.py`
