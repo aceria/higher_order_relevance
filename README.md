@@ -4,7 +4,7 @@ In this repository you find code to run experiments of the paper "The relevance 
 If you use our code in your research or projects, please consider citing us. 
 
 
-###citation
+```bibtex
 
 @article{ceria2024relevance,
   title={The relevance of higher-order ties},
