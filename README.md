@@ -12,7 +12,7 @@ If you use our code in your research or projects, please consider citing us.
   journal={arXiv preprint arXiv:2412.04584},
   year={2024}
 }
-
+```
 
 
 ## Repository organization
