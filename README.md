@@ -1,6 +1,17 @@
 # The relevance of higher-order ties
 
 In this repository you find code to run experiments of the paper "The relevance of higher-order ties". 
+If you use our code in your research or projects, please consider citing us. 
+
+
+
+
+@article{ceria2024relevance,
+  title={The relevance of higher-order ties},
+  author={Ceria, Alberto and Takes, Frank W},
+  journal={arXiv preprint arXiv:2412.04584},
+  year={2024}
+}
 
 
 
