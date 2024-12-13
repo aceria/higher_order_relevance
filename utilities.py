@@ -97,7 +97,7 @@ def from_bipartite_to_hyper_df(df):
 
     # Assign the hyper_companies and hyper_countries values to the corresponding columns in df_hyper
     df_hyper['nodes'] = hyper_companies
-    df_hyper['labels'] = hyper_countries
+    df_hyper['labels'] = hyper_countries 
 
     # Calculate the order of each hypergraph by counting the number of nodes values in each group
     df_hyper['order'] = hyper_companies.apply(lambda x: len(x))
