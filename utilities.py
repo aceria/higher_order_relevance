@@ -25,7 +25,7 @@ def add_same_label_share(df):
     return df
 
 
-def from_bipartite_list_to_hyper_df(bipartite_list, label_list = None, max_order = False, unweighted = False):
+def from_bipartite_list_to_hyper_df(bipartite_list, label_list = None, max_order = False, unweighted = False,return_labels_dict = False):
     df_hyper = pd.DataFrame(bipartite_list)
     df_hyper.columns = ['nodes','hyperlink_id']
     df_hyper = df_hyper.groupby('hyperlink_id')['nodes'].apply(lambda x:tuple(sorted(set(x)))).reset_index()
@@ -38,9 +38,12 @@ def from_bipartite_list_to_hyper_df(bipartite_list, label_list = None, max_order
         df_hyper = df_hyper[df_hyper['order']<=max_order]
     if unweighted:
         df_hyper = df_hyper.drop_duplicates('nodes')
-    return df_hyper
+    if return_labels_dict:
+        return df_hyper,labels
+    else:
+        return df_hyper
 
-def from_hyperlink_list_to_hyper_df(hyperlink_list, label_list = None, max_order = False, unweighted = False):
+def from_hyperlink_list_to_hyper_df(hyperlink_list, label_list = None, max_order = False, unweighted = False,return_labels_dict = False):
     df_hyper = pd.Series(hyperlink_list).reset_index()
     df_hyper.columns = ['hyperlink_id','nodes']
     df_hyper['nodes'] = df_hyper['nodes'].apply(lambda x:tuple(sorted(set(x))))
@@ -53,10 +56,13 @@ def from_hyperlink_list_to_hyper_df(hyperlink_list, label_list = None, max_order
         df_hyper = df_hyper[df_hyper['order']<=max_order]
     if unweighted:
         df_hyper = df_hyper.drop_duplicates('nodes')
-    return df_hyper
+    if return_labels_dict:
+        return df_hyper,labels
+    else:
+        return df_hyper
+    
 
-
-def get_df_hyper(link_list,label_list=False, size_lim=False,unweighted = False):
+def get_df_hyper(link_list,label_list=False, size_lim=False,unweighted = False,return_labels_dict = False):
     """
     Load and preprocess the DataFrame from a CSV file.
 
@@ -70,11 +76,16 @@ def get_df_hyper(link_list,label_list=False, size_lim=False,unweighted = False):
     """
     # Read the CSV file into a DataFrame
     try:
-        df = from_bipartite_list_to_hyper_df(link_list, label_list, max_order = size_lim, unweighted = unweighted)
+        df = from_bipartite_list_to_hyper_df(link_list, label_list, max_order = size_lim, unweighted = unweighted,return_labels_dict = return_labels_dict)
     except:
-        df = from_hyperlink_list_to_hyper_df(link_list, label_list, max_order = size_lim, unweighted = unweighted)
+        df = from_hyperlink_list_to_hyper_df(link_list, label_list, max_order = size_lim, return_labels_dict = return_labels_dict)
+    if return_labels_dict:
+        df,labels = df
     df = df[df['order'] > 1]
-    return df
+    if return_labels_dict:
+        return df,labels
+    else: 
+        return df
 
 def from_bipartite_to_hyper_df(df):
     """
@@ -108,4 +119,13 @@ def from_bipartite_to_hyper_df(df):
 
 
 def get_order_relevance(sr):
-    return (np.trapz(y = sr.values,x = sr.index)-1)/(max(sr.index)-min(sr.index)-1)
+    return (np.trapz(y = sr.values,x = sr.index)-0.5)/(max(sr.index)-min(sr.index)-0.5)
+
+
+def get_complementary_order_relevance(sr,max_order):
+    sr.sort_index(inplace = True,ascending = False)
+    sr = sr.loc[max_order:]
+    sr.loc[max_order +1] = 0
+    sr.index = sr.index - 1
+    
+    return max(sr.values)-sr.sort_index().loc[2:]

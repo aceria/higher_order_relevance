@@ -11,14 +11,14 @@ def compute_joint_metrics(m1):
     denominator = (((np.indices(m1.shape)[0][2:,1:] - np.indices(m1.shape)[1][2:,1:])[:,0]) *m1[2:,1:].sum(axis = 1)).sum()
     return numerator/denominator
 
-def get_joint_distr_dict(df, max_order=50):
+def get_joint_distr_dict(df, size_lim=50):
     """
     Calculate the group composition distribution and the group balance for a given dataframe.
 
     Parameters:
     - df: pandas DataFrame
         The input dataframe containing the data.
-    - max_order: int, optional
+    - size_lim: int, optional
         The maximum order to consider. Default is 50.
 
     Returns:
@@ -27,11 +27,11 @@ def get_joint_distr_dict(df, max_order=50):
         The keys are the labels values and the values are pandas dataframes representing the group composition distribution.
     """
     joint_distr_dict = {}
-    for labels, df_rest in df[df['order'] <= max_order].explode('links').groupby('links'):
+    for labels, df_rest in df[df['order'] <= size_lim].explode('links').groupby('links'):
         df_rest1 = df_rest.copy()
         print(labels)  # Print the current 'links' value
         df_rest1['same_label_count'] = df_rest1['same_label_count'].apply(lambda x: x[labels])  # Extract the count for the current 'links' value
-        joint_prob = np.zeros((max_order + 1, max_order + 1))  # Initialize the joint probability matrix
+        joint_prob = np.zeros((size_lim + 1, size_lim + 1))  # Initialize the joint probability matrix
         joint_prob_df = df_rest1.groupby(['order', 'same_label_count']).size()  # Group by 'order' and 'same_label_count' and calculate the size
         for x, y in joint_prob_df.index:
             joint_prob[x, y] = joint_prob_df.loc[(x, y)]  # Assign the size to the corresponding position in the joint probability matrix
@@ -49,14 +49,13 @@ def get_joint_distr_dict(df, max_order=50):
 
 ### general routine for running the analysis on the joint distribution of appointments
 
-def run_analysis_joint_distr(link_list, label_list, max_order=50, save_obj=False, randomization=False, seed1=0, unweighted=True, show_heatmap=False):
+def run_analysis_joint_distr(link_list, label_list, size_lim=50, save_obj=False, randomization=False, seed1=0, unweighted=True, show_heatmap=False,label_list_plot = False):
     """
-    Perform analysis on joint distribution of appointments.
-
+    Compute the group composition distribution and group balance for each label.
     Parameters:
-    - link_list (list): List of links of a bipartite network (node,hyperlink) or a list of hyperlinks.
-    - label_list (list): List of labels, one for each node, the index of the lael should match the index of the node.
-    - max_order (int, optional): Maximum order of hyperlinks. Defaults to 50.
+    - links_list (list): A list of links of a bipartite network (node, item) or a list of hyperlinks .
+    - labels_list (list): A list of labels, the index of the label should correspond to node id.
+    - size_lim (int, optional): Maximum order of hyperlinks. Defaults to 50.
     - save_obj (bool, optional): Whether to save the joint distribution dictionary as a joblib file. Defaults to False.
     - randomization (bool, optional): Whether to perform randomization on the dataframe. Defaults to False.
     - seed1 (int, optional): Seed for randomization. Defaults to 0.
@@ -68,9 +67,11 @@ def run_analysis_joint_distr(link_list, label_list, max_order=50, save_obj=False
     """
    
     # Get the dataframe with specified parameters
-    df = get_df_hyper(link_list, label_list, size_lim=max_order, unweighted=unweighted)
+    df = get_df_hyper(link_list, label_list, size_lim=size_lim, unweighted=unweighted)
+    if size_lim > df['order'].max():
+        size_lim = df['order'].max()
     rand_str = ''
-    
+    df = df[df['order']>1]
     # Perform randomization if specified
     if randomization:
         df = randomize_hyper_df(df, seed1=seed1, method=randomization)
@@ -80,17 +81,18 @@ def run_analysis_joint_distr(link_list, label_list, max_order=50, save_obj=False
     df = add_same_label_share(df)
     
     # Calculate the joint distribution dictionary
-    joint_distr_dict_overall = get_joint_distr_dict(df, max_order=max_order)
+    joint_distr_dict_overall = get_joint_distr_dict(df, size_lim=size_lim)
     group_balance = {k: compute_joint_metrics(joint_distr_dict_overall[k]) for k in joint_distr_dict_overall.keys()}
     
     unw_str = ''
     if unweighted:
         unw_str = '_unw'
     
-    joint_distr_df = {k: pd.DataFrame(joint_distr_dict_overall[k]/(joint_distr_dict_overall[k].sum())).replace(0, np.nan).loc[2:max_order,1:max_order] for k in joint_distr_dict_overall.keys()}
-    
+    joint_distr_df = {k: pd.DataFrame(joint_distr_dict_overall[k]/(joint_distr_dict_overall[k].sum())).replace(0, np.nan).loc[2:size_lim,1:size_lim] for k in joint_distr_dict_overall.keys()}
+    if label_list_plot == False:
+            label_list_plot = sorted(joint_distr_dict_overall.keys())
     if show_heatmap:
-        for k in joint_distr_dict_overall:
+        for k in label_list_plot:
             data = joint_distr_df[k]
             df_joint = pd.DataFrame(joint_distr_dict_overall[k])
             mean1 = pd.concat([df_joint[k]*k for k in df_joint],axis=1).apply(sum,axis=1)/df_joint.apply(sum,axis=1)
@@ -105,7 +107,7 @@ def run_analysis_joint_distr(link_list, label_list, max_order=50, save_obj=False
     
     # Save the joint distribution dictionary as a joblib file if specified
     if save_obj:
-        joblib.dump(joint_distr_dict_overall, 'Data/joint_distr' + str(max_order) + '_' + rand_str + unw_str + '.joblib')
+        joblib.dump(joint_distr_dict_overall, 'Data/joint_distr' + str(size_lim) + '_' + rand_str + unw_str + '.joblib')
     
     # Return the joint distribution dictionary
     return {'group_composition_distribution': joint_distr_df, 'group_balance': group_balance}

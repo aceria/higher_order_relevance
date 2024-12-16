@@ -5,7 +5,6 @@ import pandas as pd
 from scipy.special import binom
 from collections import Counter
 
-dict_str_to_limit = {k:v for k,v in zip(['1M','5M','10M','50M'],[1e6,5e6,10e6,50e6])}
 
 
 
@@ -52,12 +51,13 @@ def get_trans_hyper_df(df):
     trans_hyper = df[df['max_labels_share'] < 1].copy()
     
     # Calculate the link contribution for each different label hyperlink, as the product of the number of nodes in each pair of labels connected by the hyperlink
-    trans_hyper['link_contrib'] = trans_hyper['labels'].apply(lambda x: Counter(x)).apply(lambda x: {(k1, k2): x[k1] * x[k2] for k1, k2 in itertools.combinations(x.keys(), 2)})
+    trans_hyper['link_contrib'] = trans_hyper['labels'].apply(lambda x: Counter(x)).apply(lambda x: [(tuple(sorted([k1, k2])), x[k1] * x[k2]) for k1, k2 in itertools.combinations(x.keys(), 2)])
+    
     
     # Explode the link_contrib column into multiple rows (each row will be an labels and its weight)
     trans_hyper = trans_hyper.explode('link_contrib')
     
-    # Extract the labels and weights from the link_contrib column
+    # Extract the labels and weights from the link_contrib column 
     trans_hyper['labels'] = trans_hyper['link_contrib'].apply(lambda x: x[0])
     trans_hyper['weights'] = trans_hyper['link_contrib'].apply(lambda x: x[1])
     
@@ -97,7 +97,7 @@ def get_internal_hyper(df):
 #### Routines to compute the order relevance
 
 
-def compute_order_relevance(df1):
+def compute_order_relevance(df1):    
     df1 = df1.set_index('order')['norm_weights'].sort_index()
     return get_order_relevance(df1)
     
@@ -118,23 +118,31 @@ def compute_order_relevance_country (df_order_rel,type_analysis = 'same_label'):
     
     return df_order
 
-def run_order_relevance_analysis(links_list,labels_list,size_lim=50, type_analysis='overall', binned=False, unweighted=False,save = False):
+def run_order_relevance_analysis(links_list, labels_list, size_lim=50, type_analysis='overall', binned=False, unweighted=False, save=False, local_size_lim=True):
     """
-    Run the order relevance analysis on the given dataset.
+    Run order relevance analysis on a given set of links and labels.
 
-    Parameters:
-    size_lim (int): The size limit for the dataset.
-    type_analysis (str): The type of analysis to perform ('labelled' or 'overall'). If "overall", it computes the order relevance for the overall dataset, if "labelled" it compute the same label and different label order contribution to link weights.
-    binned (bool): Whether to group the orders into bins.
-    unweighted (bool): Whether to perform the analysis on unweighted data.
+    Args:
+        links_list (list): A list of links of a bipartite network (node, item) or a list of hyperlinks .
+        labels_list (list): A list of labels, the index of the label should correspond to node id.
+        size_lim (int, optional): The maximum size limit for the analysis. Defaults to 50.
+        type_analysis (str, optional): The type of analysis to perform. Can be 'overall' or 'labelled'. Defaults to 'overall'.
+        binned (bool, optional): Whether to perform binned analysis. Defaults to False.
+        unweighted (bool, optional): Whether to perform unweighted analysis. Defaults to False.
+        save (bool, optional): Whether to save the analysis results to a CSV file. Defaults to False.
+        local_size_lim (bool, optional): Whether to use a local size limit for each label. Defaults to True.
 
     Returns:
-    if type_analysis == 'overall': a tuple (pandas.DataFrame,float): The order contribution and the order relevance of the given higher-order network analysis results.
-    if type_analysis == 'labelled': a tuple(pandas.DataFrame1, (pandas.DataFrame2,pandas.DataFrame3)): DataFrame1 is the dataframe with the inter and intra-label order contribution of each label, while DataFrame2 (DataFrame3) is the dataframe with the intra-(inter-)order relevance of each label.
-    """
+        dict or pd.DataFrame: The order relevance analysis results. If type_analysis is 'overall', returns a dictionary with 'order_contribution' and 'order_relevance' keys. If type_analysis is 'labelled', returns a DataFrame with 'order_contribution' and 'order_relevance' columns.
 
+    Raises:
+        Exception: If an error occurs during the analysis.
+
+    """
     sr_list = list()
     df = get_df_hyper(links_list, labels_list, size_lim=size_lim, unweighted=unweighted)
+    if size_lim > df['order'].max():
+        size_lim = df['order'].max()
     df = add_same_label_share(df)
     print('data loaded')
 
@@ -145,15 +153,30 @@ def run_order_relevance_analysis(links_list,labels_list,size_lim=50, type_analys
 
         # Calculate order relevance for each labels and border type
         for labels, df_rest in df_tot_internal.groupby('labels'):
-            sr = get_order_contribution(df_rest, order_range=range(2, max(df_rest['order'] + 1)), binned=binned)
+            if local_size_lim:
+                size_lim_local = max(df_rest['order'])
+            else:
+                size_lim_local = size_lim
+            try:
+                sr = get_order_contribution(df_rest, order_range=range(min(df_rest['order']), size_lim_local + 1), binned=binned)
+            except:
+                return df_rest
             sr = sr.reset_index()
             sr['labels'] = labels
             sr['border'] = 'same_label'
 
             sr_list.append(sr)
 
-        for labels, df in df_tot_trans.explode('labels').groupby('labels'):
-            sr = get_order_contribution(df, order_range=range(2, max(df['order']) + 1), binned=binned)
+        for labels, df_rest in df_tot_trans.explode('labels').groupby('labels'):
+            if local_size_lim:
+                size_lim_local = max(df_rest['order'])
+            else:
+                size_lim_local = size_lim
+            try:
+                sr = get_order_contribution(df_rest, order_range=range(min(df_rest['order']), size_lim_local + 1), binned=binned)
+            except:
+                return df_rest
+            
             sr = sr.reset_index()
             sr['labels'] = labels
             sr['border'] = 'different_label'
@@ -173,18 +196,19 @@ def run_order_relevance_analysis(links_list,labels_list,size_lim=50, type_analys
     
     if type_analysis == 'overall':
         order_relevance = compute_order_relevance(sr)
-        sr = (sr[['order','norm_weights']].set_index('order')['norm_weights'].sort_index(),order_relevance)
+        sr = {'order_contribution':sr[['order','norm_weights']].set_index('order')['norm_weights'].sort_index(),'order_relevance':order_relevance}
     else:
         order_relevance_same_label = compute_order_relevance_country(sr,type_analysis = 'same_label')
         order_relevance_different_label = compute_order_relevance_country(sr,type_analysis = 'different_label')
         dict1 = {}
         for (border,label), df in sr.groupby(['border','labels']):
-            print(border)
             dict1[f'{border}_{label}'] = df.set_index('order')['norm_weights'].sort_index()
         sr = {'order_contribution':dict1,'order_relevance':{'same_label':order_relevance_same_label,'different_label':order_relevance_different_label}}
 
-     # Save the order relevance analysis results to a CSV file
-    if save: sr.to_csv('../Data/order_relevance/order_relevance_' + str(size_lim) + '_' + '_' + type_analysis + unweighted_str + '.csv')
+    # Save the order relevance analysis results to a CSV file
+    if save:
+        sr.to_csv('../Data/order_relevance/order_relevance_' + str(size_lim) + '_' + '_' + type_analysis + unweighted_str + '.csv')
 
     return sr
+
 
