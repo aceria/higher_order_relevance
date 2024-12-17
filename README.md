@@ -36,5 +36,9 @@ Utilities to compute the order contribution and order relevance to the sum of th
 -`utils.py`
 Utilities for our experiments.
 
+### Description of Data Folder
+
+It contains a single higher-order network of senate bills (obtained from \url{ https://www.cs.cornell.edu/~arb/data/}, where the node labels correspond to the political orientation (Democrats or Republicans) of the senators.
+
 
 
