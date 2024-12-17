@@ -203,7 +203,6 @@ def run_resilience_analysis_fast(link_list, label_list, size_lim=50, randomizati
         order_list = range(2, size_lim+1)[::-1]
         inverse_str = '_inverse'
     for order in order_list:
-        print(order)
         largest_cc, hyperlinks_filt, available_nodes,previous_step_G = compute_largest_connected_component_fast(total_hyperlinks, order, largest_cc, previous_step_G=previous_step_G1)
         previous_step_G1 = previous_step_G.copy()
         del previous_step_G
