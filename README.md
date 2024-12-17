@@ -23,7 +23,7 @@ If you use our code in your research or projects, please consider citing us.
 -`randomization.py`
 Utilities to randomize the labelled higher-order network.
 
--`resilience_nx.py`
+-`resilience_clustering_nx.py`
 Utilities to compute the (complementary) order contribution to the number of triangles, to the global largest connected component, and to the number of nodes with each label in the largest connected component of the network.
 (Based on NetworkX library)
 
