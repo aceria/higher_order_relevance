@@ -18,7 +18,7 @@ If you use our code in your research or projects, please consider citing us.
 ## Repository organization
 
 
-### Description of python files
+### Description of Code Folder
 
 -`randomization.py`
 Utilities to randomize the labelled higher-order network.
