@@ -38,7 +38,9 @@ Utilities for our experiments.
 
 ### Description of Data Folder
 
-It contains a single higher-order network of senate bills (obtained from \url{ https://www.cs.cornell.edu/~arb/data/}, where the node labels correspond to the political orientation (Democrats or Republicans) of the senators.
+It contains a single higher-order network of senate bills (obtained from https://www.cs.cornell.edu/~arb/data/), where the node labels correspond to the political orientation (Democrats or Republicans) of the senators.
 
+### Description of Example.ipynb
 
+A notebook to showcase the methods presented in our paper and included in the `Code` folder.
 
