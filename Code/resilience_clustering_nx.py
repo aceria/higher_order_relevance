@@ -4,13 +4,8 @@ import pandas as pd
 import numpy as np
 import joblib
 from randomization import randomize_hyper_df
-from utilities import get_df_hyper, get_complementary_order_relevance, get_order_relevance
+from utilities import get_df_hyper, get_complementary_order_relevance, get_order_relevance, compute_average_order_relevance, compute_order_gap
 from collections import Counter
-def find_triangles(G):
-    return set([tuple(sorted(set(triple))) for triple in set(frozenset((n,nbr,nbr2)) for n in G for nbr, nbr2 in itertools.combinations(G[n],2) if nbr in G[nbr2])])
-
-
-
 
 
 
@@ -53,7 +48,7 @@ def compute_clustering_coefficient_fast(hyperlinks, order,previous_step_G = nx.G
     return n_triangles,G
     
     
-def run_clustering_analysis_fast(link_list, label_list=False, size_lim=50, randomization=False, seed1=0, inverse_order=False, unweighted=False, save=True, verbose=False):
+def compute_measures_n_triangles(link_list, label_list=False, size_lim=50, randomization=False, seed1=0, inverse_order=False, unweighted=False, save=True, verbose=False):
     """
     Compute the order contribution and relevance to the number of triangles.
 
@@ -108,15 +103,15 @@ def run_clustering_analysis_fast(link_list, label_list=False, size_lim=50, rando
     order_relevance = get_order_relevance(order_contribution/order_contribution.max())
     overall_value = order_contribution.max()
     order_contribution = order_contribution/overall_value
-    result1 = {'order_contribution':order_contribution,'order_relevance':order_relevance, 'overall_value':overall_value}
+    result1 = {'overall': {'order_contribution':order_contribution,'order_relevance':order_relevance, 'overall_value':overall_value}}
 
     if save:
 
                     
-                joblib.dump(result1,'Data/n_triangles' + str(size_lim) + '_' + inverse_str + rand_str + type_data +'_fast.joblib')
-                
-                
-                if verbose: print('joblib file3 saved')
+        joblib.dump(result1,'Data/n_triangles' + str(size_lim) + '_' + inverse_str + rand_str + type_data +'_fast.joblib')
+        
+        
+        if verbose: print('joblib file3 saved')
                 
             
     
@@ -154,7 +149,7 @@ def compute_largest_connected_component_fast(hyperlinks, order, largest_cc=None,
         
     return set(largest_cc), hyperlinks_filt,available_nodes,G
 
-def run_resilience_analysis_fast(link_list, label_list, size_lim=50, randomization=False, seed1=0, inverse_order=False, unweighted=False, verbose=False, save=False, size_lim_local=True):
+def compute_measures_largest_connected_component(link_list, label_list, size_lim=50, randomization=False, seed1=0, inverse_order=False, unweighted=False, verbose=False, save=False, size_lim_local=True):
     """
     Compute the order contribution and relevance to the size of the largest connected component and to the number of nodes of each label in the largest connected component.
 
@@ -254,3 +249,50 @@ def run_resilience_analysis_fast(link_list, label_list, size_lim=50, randomizati
         joblib.dump(results, 'Data/' + 'resilience_results' + str(size_lim) + '_' + inverse_str + rand_str + type_data + '.joblib')
     del total_hyperlinks,largest_cc
     return results
+
+
+def run_analysis_connected_component(link_list, label_list, size_lim=50, randomization=False, seed1=0, unweighted=False, verbose=False, save=False, size_lim_local=True):
+    results = {'overall':{},'local':{}}
+    measures = compute_measures_largest_connected_component(link_list, label_list, size_lim=50, randomization=False, seed1=0, inverse_order=False, unweighted=False, verbose=False, save=False, size_lim_local=True)
+    complementary_measures = compute_measures_largest_connected_component(link_list, label_list, size_lim=50, randomization=False, seed1=0, inverse_order=True, unweighted=False, verbose=False, save=False, size_lim_local=True)
+    results['overall']['measures'] = measures['overall']
+    results['overall']['complementary_measures'] = complementary_measures['overall']
+    results['local']['measures'] = measures['local']
+    results['local']['complementary_measures'] = complementary_measures['local']
+    
+
+    results['overall']['average_order_relevance'] = compute_average_order_relevance(results['overall']['measures']['order_relevance'], results['overall']['complementary_measures']['order_relevance'])
+    results['overall']['order_gap'] = compute_order_gap (results['overall']['measures']['order_relevance'], results['overall']['complementary_measures']['order_relevance'])
+    
+    results['local']['average_order_relevance'] = {}
+    results['local']['order_gap'] = {}
+    
+    for label in results['local']['measures']['order_contribution'].keys():
+    
+        results['local']['average_order_relevance'][label] = compute_average_order_relevance(results['local']['measures']['order_relevance'][label], results['local']['complementary_measures']['order_relevance'][label])
+        
+        results['local']['order_gap'][label] = compute_order_gap(results['local']['measures']['order_relevance'][label], results['local']['complementary_measures']['order_relevance'][label])
+
+    return results
+   
+   
+   
+def run_analysis_n_triangles(link_list, label_list, size_lim=50, randomization=False, seed1=0, unweighted=False, verbose=False, save=False, size_lim_local=True):
+    
+    results = {'overall':{}}
+    
+    measures = compute_measures_n_triangles(link_list, label_list, size_lim=50, randomization=False, seed1=0, inverse_order=False, unweighted=False, verbose=False, save=False)
+    complementary_measures = compute_measures_n_triangles(link_list, label_list, size_lim=50, randomization=False, seed1=0, inverse_order=True, unweighted=False, verbose=False, save=False)
+    
+    results['overall']['measures'] = measures['overall']
+    results['overall']['complementary_measures'] = complementary_measures['overall']
+
+
+    results['overall']['average_order_relevance'] = compute_average_order_relevance(results['overall']['measures']['order_relevance'], results['overall']['complementary_measures']['order_relevance'])
+    results['overall']['order_gap'] = compute_order_gap (results['overall']['measures']['order_relevance'], results['overall']['complementary_measures']['order_relevance'])
+
+
+    return results
+
+
+

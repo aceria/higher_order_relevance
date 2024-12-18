@@ -129,3 +129,10 @@ def get_complementary_order_relevance(sr,max_order):
     sr.index = sr.index - 1
     
     return max(sr.values)-sr.sort_index().loc[2:]
+
+
+def compute_average_order_relevance(measure,complementary_measure):
+    return 0.5 * (measure + complementary_measure)
+    
+def compute_order_gap(measure,complementary_measure):
+    return measure - complementary_measure
