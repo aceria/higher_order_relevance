@@ -119,7 +119,7 @@ def from_bipartite_to_hyper_df(df):
 
 
 def get_order_relevance(sr):
-    return (np.trapz(y = sr.values,x = sr.index)-0.5)/(max(sr.index)-min(sr.index)-0.5)
+    return (np.sum(y = sr.values,x = sr.index)-1)/(max(sr.index)-min(sr.index))
 
 
 def get_complementary_order_relevance(sr,max_order):
